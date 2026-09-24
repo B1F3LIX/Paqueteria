@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FF6A2B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Ruta de Entregas</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#F4F5F0;
+    --surface:#FFFFFF;
+    --surface-2:#ECEFE8;
+    --text:#1A1D19;
+    --muted:#666F63;
+    --border:#DCE0D6;
+    --accent:#FF6A2B;
+    --accent-ink:#FFFFFF;
+    --success:#2E9E5B;
+    --success-bg:#E3F3E9;
+    --danger:#D64545;
+    --danger-bg:#FBE7E5;
+    --shadow: 0 1px 2px rgba(20,22,16,0.06), 0 6px 16px rgba(20,22,16,0.06);
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14161A; --surface:#1D2024; --surface-2:#24282D; --text:#EDEFE9; --muted:#9AA098;
+      --border:#2C3036; --accent:#FF7A3D; --accent-ink:#1A1000; --success:#3FBE73; --success-bg:#173626;
+      --danger:#E5675C; --danger-bg:#3A1F1D;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.35);
+      color-scheme:dark;
+    }
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:'Manrope', system-ui, -apple-system, sans-serif;
+    padding-inline:16px;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .mono{ font-family:'IBM Plex Mono', ui-monospace, monospace; }
+  .wrap{ max-width:520px; margin:0 auto; padding-block:14px 40px; }
+
+  header.top{
+    position:sticky; top: env(safe-area-inset-top, 0px); z-index:20;
+    background:var(--bg); padding-block:10px 10px;
+    border-bottom:1px solid var(--border); margin-bottom:14px;
+  }
+  header.top .row1{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  header.top h1{ font-size:18px; margin:0; letter-spacing:-0.01em; font-weight:800; }
+  .count-pill{
+    font-family:'IBM Plex Mono', monospace; font-size:13px; background:var(--surface-2);
+    border:1px solid var(--border); border-radius:999px; padding:5px 12px;
+    font-variant-numeric: tabular-nums; white-space:nowrap; flex-shrink:0;
+  }
+  .geo-status{
+    display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12.5px; color:var(--muted);
+  }
+  .geo-dot{ width:8px; height:8px; border-radius:50%; background:var(--muted); flex-shrink:0; }
+  .geo-dot.ok{ background:var(--success); }
+  .geo-dot.err{ background:var(--danger); }
+  .geo-refresh{
+    appearance:none; border:1px solid var(--border); background:var(--surface-2); color:var(--text);
+    font-family:inherit; font-size:12px; font-weight:700; border-radius:999px; padding:5px 10px; cursor:pointer;
+    margin-left:auto; flex-shrink:0;
+  }
+  .geo-refresh:active{ transform:scale(0.96); }
+
+  section{ margin-bottom:22px; }
+  .eyebrow{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:0 0 8px 2px; }
+
+  .next-card{
+    background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--accent);
+    border-radius:14px; padding:16px; box-shadow:var(--shadow);
+  }
+  .next-card .badge{
+    display:inline-flex; align-items:center; gap:6px; background:var(--accent); color:var(--accent-ink);
+    font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em;
+    padding:4px 10px; border-radius:999px; margin-bottom:10px;
+  }
+  .next-card .badge.dist{ background:var(--surface-2); color:var(--text); margin-left:6px; }
+  .next-card h2{ font-size:21px; margin:0 0 4px; font-weight:800; text-wrap:balance; }
+  .next-card .dir{ color:var(--muted); font-size:14px; line-height:1.4; margin:0 0 14px; }
+  .btn-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .btn{
+    appearance:none; border:none; cursor:pointer; font-family:inherit; font-size:14px; font-weight:700;
+    padding:11px 14px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    text-decoration:none; flex:1 1 auto; min-width:120px; transition:transform .08s ease, opacity .15s ease;
+  }
+  .btn:active{ transform:scale(0.97); }
+  .btn-primary{ background:var(--accent); color:var(--accent-ink); }
+  .btn-success{ background:var(--success); color:#fff; }
+  .btn-ghost{ background:var(--surface-2); color:var(--text); border:1px solid var(--border); }
+  .btn[disabled]{ opacity:.45; cursor:not-allowed; }
+
+  .empty-next{
+    background:var(--surface); border:1px dashed var(--border); border-radius:14px;
+    padding:24px 16px; text-align:center; color:var(--muted); font-size:14px;
+  }
+  .empty-next strong{ display:block; color:var(--text); font-size:15px; margin-bottom:4px; }
+
+  form.add{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px;
+    box-shadow:var(--shadow); display:flex; flex-direction:column; gap:10px;
+  }
+  .field label{ display:block; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:.04em; }
+  .field input{
+    width:100%; font-family:inherit; font-size:15px; background:var(--surface-2); border:1px solid var(--border);
+    color:var(--text); border-radius:9px; padding:10px 11px;
+  }
+  .field input:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+  form.add .btn{ align-self:flex-end; min-width:140px; }
+  .form-note{ font-size:12px; color:var(--muted); margin:0; }
+
+  ul.queue{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .stop{ background:var(--surface); border:1px solid var(--border); border-radius:11px; padding:11px 12px; display:flex; align-items:center; gap:10px; }
+  .stop .order{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--muted); background:var(--surface-2);
+    border-radius:7px; min-width:26px; height:26px; display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; font-variant-numeric: tabular-nums;
+  }
+  .stop .info{ flex:1 1 auto; min-width:0; }
+  .stop .info .nm{ font-weight:700; font-size:14px; }
+  .stop .info .dr{ font-size:12.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .stop .info .dist{ font-size:11.5px; color:var(--accent); font-weight:700; margin-top:1px; }
+  .stop .actions{ display:flex; align-items:center; gap:2px; flex-shrink:0; }
+  .iconbtn{
+    appearance:none; border:none; background:var(--surface-2); cursor:pointer; width:30px; height:30px;
+    border-radius:7px; display:flex; align-items:center; justify-content:center; color:var(--text); font-size:14px; line-height:1;
+  }
+  .iconbtn:active{ transform:scale(0.92); }
+  .iconbtn[disabled]{ opacity:.3; cursor:not-allowed; }
+  .iconbtn.del{ color:var(--danger); }
+
+  details.history summary{
+    cursor:pointer; font-size:13px; font-weight:700; color:var(--muted); list-style:none;
+    display:flex; align-items:center; gap:6px; padding:4px 2px;
+  }
+  details.history summary::-webkit-details-marker{ display:none; }
+  details.history summary .chev{ transition:transform .15s ease; font-size:11px; }
+  details.history[open] summary .chev{ transform:rotate(90deg); }
+  .done-item{ display:flex; align-items:center; gap:10px; padding:9px 4px; border-bottom:1px solid var(--border); font-size:13.5px; }
+  .done-item:last-child{ border-bottom:none; }
+  .done-item .tick{
+    width:20px; height:20px; border-radius:50%; background:var(--success-bg); color:var(--success);
+    display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0;
+  }
+  .done-item .nm{ font-weight:600; }
+  .done-item .dr{ color:var(--muted); font-size:12px; }
+  .done-item .time{ margin-left:auto; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--muted); flex-shrink:0; }
+
+  .example-note{
+    font-size:12px; color:var(--muted); background:var(--surface-2); border:1px solid var(--border);
+    border-radius:9px; padding:9px 11px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; gap:8px;
+  }
+
+  .toast{
+    position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom,0px));
+    transform:translateX(-50%) translateY(20px); opacity:0; pointer-events:none;
+    background:var(--text); color:var(--bg); font-size:13px; font-weight:600; padding:10px 16px;
+    border-radius:999px; box-shadow:var(--shadow); transition:opacity .2s ease, transform .2s ease; z-index:50; white-space:nowrap;
+    max-width: calc(100vw - 32px); overflow:hidden; text-overflow:ellipsis;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
+
+  .pin{ display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:4px; }
+  .pin.pend{ background:var(--muted); }
+  .pin.ok{ background:var(--success); }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="row1">
+      <div>
+        <h1>Ruta de hoy</h1>
+      </div>
+      <div class="count-pill mono" id="countPill">0 pendientes</div>
+    </div>
+    <div class="geo-status">
+      <span class="geo-dot" id="geoDot"></span>
+      <span id="geoText">Ubicando…</span>
+      <button class="geo-refresh" id="geoRefresh">Actualizar ubicación</button>
+    </div>
+  </header>
+
+  <section>
+    <p class="eyebrow">Próxima parada</p>
+    <div id="nextSlot"></div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Agregar paquete</p>
+    <form class="add" id="addForm">
+      <div class="field">
+        <label for="fNombre">Cliente</label>
+        <input id="fNombre" type="text" placeholder="Nombre del comprador" autocomplete="off" required>
+      </div>
+      <div class="field">
+        <label for="fDireccion">Dirección</label>
+        <input id="fDireccion" type="text" placeholder="Calle, número, barrio, ciudad" autocomplete="off" required>
+      </div>
+      <p class="form-note" id="geocodeNote"></p>
+      <button type="submit" class="btn btn-primary" id="addBtn">+ Agregar a la ruta</button>
+    </form>
+  </section>
+
+  <section>
+    <p class="eyebrow" id="queueLabel">Resto de la ruta</p>
+    <div id="exampleNote"></div>
+    <ul class="queue" id="queueList"></ul>
+  </section>
+
+  <section>
+    <details class="history" id="historyBlock">
+      <summary><span class="chev">▶</span> <span id="historyLabel">Entregados hoy</span></summary>
+      <div id="historyList" style="margin-top:8px;"></div>
+    </details>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  var STORAGE_KEY = "ruta_entregas_gps_v1";
+  var toastTimer = null;
+  var currentPos = null; // {lat, lon, accuracy, ts}
+  var geoWatchId = null;
+
+  var exampleData = [
+    { id:"ex1", nombre:"Laura Gómez (EJEMPLO)", direccion:"Cra 15 #93-47, Chapinero, Bogotá", estado:"pendiente", orden:1, lat:4.6746, lon:-74.0530, geocode:"ok", ejemplo:true },
+    { id:"ex2", nombre:"Andrés Restrepo (EJEMPLO)", direccion:"Calle 70 #11-30, Bogotá", estado:"pendiente", orden:2, lat:4.6570, lon:-74.0550, geocode:"ok", ejemplo:true },
+    { id:"ex3", nombre:"Marcela Ortiz (EJEMPLO)", direccion:"Av. Suba #114-05, Bogotá", estado:"pendiente", orden:3, lat:4.7215, lon:-74.0820, geocode:"ok", ejemplo:true }
+  ];
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(Array.isArray(parsed)) return parsed;
+      }
+    }catch(e){}
+    return exampleData.slice();
+  }
+  function saveState(list){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){} }
+
+  var state = loadState();
+
+  function uid(){ return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  function pendientesRaw(){ return state.filter(function(p){ return p.estado === "pendiente"; }); }
+  function entregados(){
+    return state.filter(function(p){ return p.estado === "entregado"; })
+                .sort(function(a,b){ return (b.horaEntregado||0) - (a.horaEntregado||0); });
+  }
+
+  function haversineKm(lat1, lon1, lat2, lon2){
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI/180;
+    var dLon = (lon2 - lon1) * Math.PI/180;
+    var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+            Math.sin(dLon/2)*Math.sin(dLon/2);
+    var c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R*c;
+  }
+
+  function pendientesOrdenados(){
+    var pend = pendientesRaw();
+    var conCoords = pend.filter(function(p){ return typeof p.lat === "number" && typeof p.lon === "number"; });
+    var sinCoords = pend.filter(function(p){ return !(typeof p.lat === "number" && typeof p.lon === "number"); });
+
+    if(currentPos && conCoords.length){
+      conCoords.forEach(function(p){
+        p._dist = haversineKm(currentPos.lat, currentPos.lon, p.lat, p.lon);
+      });
+      conCoords.sort(function(a,b){ return a._dist - b._dist; });
+    } else {
+      conCoords.sort(function(a,b){ return a.orden - b.orden; });
+    }
+    sinCoords.sort(function(a,b){ return a.orden - b.orden; });
+    // items sin coords van al final, ordenables a mano
+    return conCoords.concat(sinCoords);
+  }
+
+  function mapsUrl(p){
+    if(typeof p.lat === "number" && typeof p.lon === "number"){
+      return "https://www.google.com/maps/dir/?api=1&destination=" + p.lat + "," + p.lon + "&travelmode=driving";
+    }
+    return "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(p.direccion) + "&travelmode=driving";
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+
+  function showToast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2600);
+  }
+
+  function formatTime(ts){
+    try{ return new Date(ts).toLocaleTimeString("es-CO", { hour:"2-digit", minute:"2-digit" }); }
+    catch(e){ return ""; }
+  }
+  function formatDist(km){
+    if(km < 1) return Math.round(km*1000) + " m";
+    return km.toFixed(1) + " km";
+  }
+
+  // ---- Geolocation ----
+  function updateGeoStatus(state_, text){
+    var dot = document.getElementById("geoDot");
+    var txt = document.getElementById("geoText");
+    dot.className = "geo-dot" + (state_ === "ok" ? " ok" : state_ === "err" ? " err" : "");
+    txt.textContent = text;
+  }
+
+  function refreshLocation(silent){
+    if(!("geolocation" in navigator)){
+      updateGeoStatus("err", "Este navegador no soporta ubicación");
+      return;
+    }
+    if(!silent) updateGeoStatus("", "Buscando tu ubicación…");
+    navigator.geolocation.getCurrentPosition(
+      function(pos){
+        currentPos = { lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy, ts: Date.now() };
+        updateGeoStatus("ok", "Ubicado (±" + Math.round(pos.coords.accuracy) + " m) · ordenando por cercanía");
+        render();
+      },
+      function(err){
+        var msg = "No se pudo obtener tu ubicación";
+        if(err.code === err.PERMISSION_DENIED) msg = "Ubicación bloqueada. Actívala en el navegador para ordenar por cercanía";
+        updateGeoStatus("err", msg);
+        render();
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 15000 }
+    );
+  }
+
+  document.getElementById("geoRefresh").addEventListener("click", function(){ refreshLocation(false); });
+
+  // ---- Geocoding (OpenStreetMap Nominatim) ----
+  var geocodeQueueBusy = false;
+  function geocodeDireccion(direccion){
+    var params = new URLSearchParams({
+      format: "json",
+      q: direccion,
+      limit: "1",
+      "accept-language": "es"
+    });
+    if(currentPos){
+      var d = 0.6; // sesgo aproximado (~60km) hacia donde estás, sin restringir
+      params.set("viewbox", (currentPos.lon-d)+","+(currentPos.lat+d)+","+(currentPos.lon+d)+","+(currentPos.lat-d));
+      params.set("bounded", "0");
+    }
+    return fetch("https://nominatim.openstreetmap.org/search?" + params.toString(), {
+      headers: { "Accept": "application/json" }
+    }).then(function(res){
+      if(!res.ok) throw new Error("geocode-failed");
+      return res.json();
+    }).then(function(results){
+      if(results && results.length){
+        return { lat: parseFloat(results[0].lat), lon: parseFloat(results[0].lon) };
+      }
+      return null;
+    });
+  }
+
+  // ---- Render ----
+  function render(){
+    var pendOrdenado = pendientesOrdenados();
+    var done = entregados();
+    var hasExamples = state.some(function(p){ return p.ejemplo; });
+    var orderingByDist = !!(currentPos && pendOrdenado.length && typeof pendOrdenado[0]._dist === "number");
+
+    document.getElementById("countPill").textContent = pendOrdenado.length + (pendOrdenado.length === 1 ? " pendiente" : " pendientes");
+
+    var nextSlot = document.getElementById("nextSlot");
+    if(pendOrdenado.length === 0){
+      nextSlot.innerHTML =
+        '<div class="empty-next">' +
+          '<strong>No hay paquetes en la ruta</strong>' +
+          'Agrega el primero abajo para empezar.' +
+        '</div>';
+    } else {
+      var next = pendOrdenado[0];
+      var distBadge = (typeof next._dist === "number") ? '<span class="badge dist">' + formatDist(next._dist) + '</span>' : '';
+      nextSlot.innerHTML =
+        '<div class="next-card">' +
+          '<span class="badge">Parada 1 de ' + pendOrdenado.length + '</span>' + distBadge +
+          '<h2>' + escapeHtml(next.nombre) + '</h2>' +
+          '<p class="dir mono">' + escapeHtml(next.direccion) + '</p>' +
+          '<div class="btn-row">' +
+            '<a class="btn btn-primary" href="' + mapsUrl(next) + '" target="_blank" rel="noopener">Navegar en Maps</a>' +
+            '<button class="btn btn-success" data-complete="' + next.id + '">Marcar entregado</button>' +
+          '</div>' +
+        '</div>';
+    }
+
+    var rest = pendOrdenado.slice(1);
+    document.getElementById("queueLabel").textContent = orderingByDist
+      ? (rest.length ? "Resto de la ruta, por cercanía (" + rest.length + ")" : "Resto de la ruta")
+      : (rest.length ? "Resto de la ruta (" + rest.length + ")" : "Resto de la ruta");
+
+    var ul = document.getElementById("queueList");
+    if(rest.length === 0){
+      ul.innerHTML = "";
+    } else {
+      ul.innerHTML = rest.map(function(p, idx){
+        var distTxt = (typeof p._dist === "number") ? ('<div class="dist mono">' + formatDist(p._dist) + '</div>') :
+          (p.geocode === "error" ? '<div class="dist mono" style="color:var(--danger)">sin ubicar — orden manual</div>' : '<div class="dist mono">ubicando…</div>');
+        var showArrows = !orderingByDist || !(typeof p.lat === "number");
+        return (
+          '<li class="stop">' +
+            '<span class="order mono">' + (idx + 2) + '</span>' +
+            '<span class="info">' +
+              '<div class="nm">' + escapeHtml(p.nombre) + '</div>' +
+              '<div class="dr mono">' + escapeHtml(p.direccion) + '</div>' +
+              distTxt +
+            '</span>' +
+            '<span class="actions">' +
+              (showArrows ? (
+                '<button class="iconbtn" title="Subir prioridad" data-up="' + p.id + '">&#8593;</button>' +
+                '<button class="iconbtn" title="Bajar prioridad" data-down="' + p.id + '"' + (idx===rest.length-1?' disabled':'') + '>&#8595;</button>'
+              ) : '') +
+              '<button class="iconbtn del" title="Eliminar" data-del="' + p.id + '">&times;</button>' +
+            '</span>' +
+          '</li>'
+        );
+      }).join("");
+    }
+
+    var noteSlot = document.getElementById("exampleNote");
+    noteSlot.innerHTML = hasExamples
+      ? '<div class="example-note"><span>Estos son paquetes de ejemplo.</span><button class="btn btn-ghost" id="clearExamples" style="flex:none; padding:7px 10px; font-size:12px;">Quitar ejemplos</button></div>'
+      : '';
+
+    document.getElementById("historyLabel").textContent = "Entregados hoy (" + done.length + ")";
+    var hl = document.getElementById("historyList");
+    hl.innerHTML = done.length === 0
+      ? '<p style="font-size:13px;color:var(--muted);margin:6px 2px;">Aún no has marcado entregas.</p>'
+      : done.map(function(p){
+          return (
+            '<div class="done-item">' +
+              '<span class="tick">&#10003;</span>' +
+              '<span class="nm">' + escapeHtml(p.nombre) + '</span>' +
+              '<span class="dr">' + escapeHtml(p.direccion) + '</span>' +
+              '<span class="time">' + formatTime(p.horaEntregado) + '</span>' +
+            '</div>'
+          );
+        }).join("");
+
+    bindRowEvents();
+  }
+
+  function bindRowEvents(){
+    var completeBtn = document.querySelector("[data-complete]");
+    if(completeBtn){
+      completeBtn.onclick = function(){
+        var id = completeBtn.getAttribute("data-complete");
+        var item = state.find(function(p){ return p.id === id; });
+        if(item){
+          item.estado = "entregado";
+          item.horaEntregado = Date.now();
+          saveState(state);
+          render();
+          refreshLocation(true); // recalcula tu posición para la próxima parada
+          var upcoming = pendientesOrdenados();
+          showToast(upcoming.length ? "Entregado. Próxima: " + upcoming[0].nombre : "¡Entregado! No quedan más paradas.");
+        }
+      };
+    }
+    document.querySelectorAll("[data-up]").forEach(function(btn){
+      btn.onclick = function(){ moveManual(btn.getAttribute("data-up"), -1); };
+    });
+    document.querySelectorAll("[data-down]").forEach(function(btn){
+      btn.onclick = function(){ moveManual(btn.getAttribute("data-down"), 1); };
+    });
+    document.querySelectorAll("[data-del]").forEach(function(btn){
+      btn.onclick = function(){
+        var id = btn.getAttribute("data-del");
+        state = state.filter(function(p){ return p.id !== id; });
+        saveState(state);
+        render();
+      };
+    });
+    var clearBtn = document.getElementById("clearExamples");
+    if(clearBtn){
+      clearBtn.onclick = function(){
+        state = state.filter(function(p){ return !p.ejemplo; });
+        saveState(state);
+        render();
+      };
+    }
+  }
+
+  function moveManual(id, direction){
+    var pend = pendientesRaw().filter(function(p){ return !(typeof p.lat === "number"); })
+                               .sort(function(a,b){ return a.orden - b.orden; });
+    var idx = pend.findIndex(function(p){ return p.id === id; });
+    var swapIdx = idx + direction;
+    if(idx < 0 || swapIdx < 0 || swapIdx >= pend.length) return;
+    var tmp = pend[idx].orden;
+    pend[idx].orden = pend[swapIdx].orden;
+    pend[swapIdx].orden = tmp;
+    saveState(state);
+    render();
+  }
+
+  document.getElementById("addForm").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var nombreEl = document.getElementById("fNombre");
+    var direccionEl = document.getElementById("fDireccion");
+    var addBtn = document.getElementById("addBtn");
+    var note = document.getElementById("geocodeNote");
+    var nombre = nombreEl.value.trim();
+    var direccion = direccionEl.value.trim();
+    if(!nombre || !direccion) return;
+
+    var pend = pendientesRaw();
+    var maxOrden = pend.reduce(function(m,p){ return Math.max(m, p.orden); }, 0);
+    var nuevo = { id: uid(), nombre: nombre, direccion: direccion, estado: "pendiente", orden: maxOrden + 1, geocode: "pending" };
+    state.push(nuevo);
+    saveState(state);
+    nombreEl.value = "";
+    direccionEl.value = "";
+    nombreEl.focus();
+    render();
+    showToast("Paquete agregado, ubicando dirección…");
+
+    addBtn.disabled = true;
+    note.textContent = "Buscando la dirección en el mapa…";
+    geocodeDireccion(direccion).then(function(coords){
+      if(coords){
+        nuevo.lat = coords.lat;
+        nuevo.lon = coords.lon;
+        nuevo.geocode = "ok";
+        note.textContent = "";
+      } else {
+        nuevo.geocode = "error";
+        note.textContent = "No encontré esa dirección en el mapa. Puedes ordenarla a mano con las flechas.";
+      }
+      saveState(state);
+      render();
+    }).catch(function(){
+      nuevo.geocode = "error";
+      note.textContent = "No pude ubicar la dirección (sin conexión). Se puede ordenar a mano.";
+      saveState(state);
+      render();
+    }).finally(function(){
+      addBtn.disabled = false;
+    });
+  });
+
+  refreshLocation(false);
+  render();
+})();
+</script>
+</body>
+</html>
